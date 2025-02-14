@@ -1,14 +1,15 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import Base64 from 'base64-js';
 import MarkdownIt from 'markdown-it';
-import { maybeShowApiKeyBanner } from './gemini-api-banner';
 import './style.css';
+import 'dotenv/config';
+import { maybeShowApiKeyBanner } from './gemini-api-banner';
 
 // 🔥🔥 FILL THIS OUT FIRST! 🔥🔥
 // Get your Gemini API key by:
 // - Selecting "Add Gemini API" in the "Project IDX" panel in the sidebar
-// - Or by visiting https://g.co/ai/idxGetGeminiKey
-let API_KEY = 'AIzaSyATnHB07O_ZOLuDbn6YWf4e89f3iABoQIE';
+
+let API_KEY = process.env.API_KEY;
 
 let form = document.querySelector('form');
 let promptInput = document.querySelector('input[name="prompt"]');
@@ -19,7 +20,6 @@ form.onsubmit = async (ev) => {
   output.textContent = 'Generating...';
 
   try {
-    // Load the image as a base64 string
     const fileInput = document.getElementById('fileInput');
     const file = fileInput.files[0];
  
@@ -28,13 +28,12 @@ form.onsubmit = async (ev) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = () => {
-        const base64String = reader.result.split(',')[1]; // Extract base64 part
+        const base64String = reader.result.split(',')[1]; 
         resolve(base64String);
       };
       reader.onerror = reject;
     });
 
-    // Assemble the prompt by combining the text with the chosen image
     let contents = [
       {
         role: 'user',
@@ -45,10 +44,9 @@ form.onsubmit = async (ev) => {
       }
     ];
 
-    // Call the multimodal model, and get a stream of results
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash", // or gemini-1.5-pro
+      model: "gemini-1.5-pro", 
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -59,7 +57,6 @@ form.onsubmit = async (ev) => {
 
     const result = await model.generateContentStream({ contents });
 
-    // Read from the stream and interpret the output as markdown
     let buffer = [];
     let md = new MarkdownIt();
     for await (let response of result.stream) {
@@ -71,5 +68,4 @@ form.onsubmit = async (ev) => {
   }
 };
 
-// You can delete this once you've filled out an API key
 maybeShowApiKeyBanner(API_KEY);
